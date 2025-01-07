@@ -1,9 +1,9 @@
 ﻿namespace ThoughtWorks.QRCode.Codec
 {
     using System;
-    using System.Drawing;
     using System.IO;
     using System.Text;
+    using SkiaSharp;
     using ThoughtWorks.QRCode.Codec.Util;
     using ThoughtWorks.QRCode.Properties;
 
@@ -15,8 +15,8 @@
         internal int qrcodeStructureappendN = 0;
         internal int qrcodeStructureappendM = 0;
         internal int qrcodeStructureappendParity = 0;
-        internal System.Drawing.Color qrCodeBackgroundColor = System.Drawing.Color.White;
-        internal System.Drawing.Color qrCodeForegroundColor = System.Drawing.Color.Black;
+        internal SKColor qrCodeBackgroundColor = SKColors.White;
+        internal SKColor qrCodeForegroundColor = SKColors.Black;
         internal int qrCodeScale = 4;
         internal string qrcodeStructureappendOriginaldata = "";
 
@@ -640,7 +640,7 @@
             return numArray;
         }
 
-        public virtual Bitmap Encode(string content)
+        public virtual SKBitmap Encode(string content)
         {
             if (QRCodeUtility.IsUniCode(content))
             {
@@ -649,25 +649,49 @@
             return this.Encode(content, Encoding.ASCII);
         }
 
-        public virtual Bitmap Encode(string content, Encoding encoding)
+        public virtual SKBitmap Encode(string content, Encoding encoding)
         {
+            // 生成二维码的布尔数组
             bool[][] flagArray = this.calQrcode(encoding.GetBytes(content));
-            SolidBrush brush = new SolidBrush(this.qrCodeBackgroundColor);
-            Bitmap image = new Bitmap((flagArray.Length * this.qrCodeScale) + 1, (flagArray.Length * this.qrCodeScale) + 1);
-            Graphics graphics = Graphics.FromImage(image);
-            graphics.FillRectangle(brush, new Rectangle(0, 0, image.Width, image.Height));
-            brush.Color = this.qrCodeForegroundColor;
-            for (int i = 0; i < flagArray.Length; i++)
+
+            // 计算位图的尺寸
+            int dimension = flagArray.Length;
+            int bitmapSize = (dimension * this.qrCodeScale) + 1;
+
+            // 创建 SKBitmap
+            SKBitmap bitmap = new SKBitmap(bitmapSize, bitmapSize, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+            using (SKCanvas canvas = new SKCanvas(bitmap))
             {
-                for (int j = 0; j < flagArray.Length; j++)
+                // 清空画布并填充背景颜色
+                canvas.Clear(this.qrCodeBackgroundColor);
+
+                // 设置前景画笔
+                using (SKPaint foregroundPaint = new SKPaint
                 {
-                    if (flagArray[j][i])
+                    Style = SKPaintStyle.Fill,
+                    Color = this.qrCodeForegroundColor,
+                    IsAntialias = false // 为了保持二维码的锐利边缘
+                })
+                {
+                    // 遍历布尔数组并绘制前景块
+                    for (int y = 0; y < dimension; y++)
                     {
-                        graphics.FillRectangle(brush, j * this.qrCodeScale, i * this.qrCodeScale, this.qrCodeScale, this.qrCodeScale);
+                        for (int x = 0; x < dimension; x++)
+                        {
+                            if (flagArray[x][y])
+                            {
+                                float left = x * this.qrCodeScale;
+                                float top = y * this.qrCodeScale;
+                                SKRect rect = new SKRect(left, top, left + this.qrCodeScale, top + this.qrCodeScale);
+                                canvas.DrawRect(rect, foregroundPaint);
+                            }
+                        }
                     }
                 }
             }
-            return image;
+
+            return bitmap;
         }
 
         private static sbyte selectMask(sbyte[][] matrixContent, int maxCodewordsBitWithRemain)
@@ -837,7 +861,7 @@
                 this.qrCodeScale = value;
         }
 
-        public virtual System.Drawing.Color QRCodeBackgroundColor
+        public virtual SKColor QRCodeBackgroundColor
         {
             get =>
                 this.qrCodeBackgroundColor;
@@ -845,7 +869,7 @@
                 this.qrCodeBackgroundColor = value;
         }
 
-        public virtual System.Drawing.Color QRCodeForegroundColor
+        public virtual SKColor QRCodeForegroundColor
         {
             get =>
                 this.qrCodeForegroundColor;

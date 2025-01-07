@@ -9,7 +9,6 @@ ThoughtWorks.QRCode很好用，但是该类库不支持标准库
 代码摘要  
 
 ```c#
-using System.Drawing;
 using ThoughtWorks.QRCode.Codec;
 using ThoughtWorks.QRCode.Codec.Data;
 

@@ -1,19 +1,23 @@
 ﻿namespace ThoughtWorks.QRCode.Codec.Data
 {
     using System;
-    using System.Drawing;
+    using SkiaSharp;
 
     public class QRCodeBitmapImage : QRCodeImage
     {
-        private Bitmap image;
+        private SKBitmap image;
 
-        public QRCodeBitmapImage(Bitmap image)
+        public QRCodeBitmapImage(SKBitmap image)
         {
             this.image = image;
         }
 
-        public virtual int getPixel(int x, int y) => 
-            this.image.GetPixel(x, y).ToArgb();
+
+        public virtual int getPixel(int x, int y)
+        {
+            SKColor color = this.image.GetPixel(x, y);
+            return (color.Alpha << 24) | (color.Red << 16) | (color.Green << 8) | color.Blue;
+        }
 
         public virtual int Width =>
             this.image.Width;
